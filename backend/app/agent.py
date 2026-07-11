@@ -4,7 +4,6 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-
 from app.prompts import SYSTEM_PROMPT
 from app.tools import get_current_time
 
