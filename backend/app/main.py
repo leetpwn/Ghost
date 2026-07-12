@@ -2,8 +2,6 @@
 # The goal of this file is to start the backend FastAPI server, expose API endpoints, call the agent and return the resposne. 
 
 
-# Entry point for the Ghost backend and API routes.
-
 from fastapi import FastAPI
 from app.agent import GhostAgent
 from app.models import ChatRequest, ChatResponse
