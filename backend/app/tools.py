@@ -5,7 +5,7 @@ from langchain_core.tools import tool
 import subprocess #open_calculator
 import platform   #open_calculator
 
-
+DEFAULT_URL = "https://www.google.com"  # Default URL for the open_browser tool
 
 @tool
 def get_current_time() -> str:
@@ -29,8 +29,20 @@ def open_calculator() -> str:
     except Exception as e:
         return f"Failed to open calculator: {e}"
     
+@tool
+def open_browser(url: str = DEFAULT_URL) -> str:
+    """Opens the default web browser to a specified URL."""
+    try:
+        subprocess.Popen(["start", url], shell=True)
+
+        return f"Browser opened to {url}."
+    
+    except Exception as e:
+        return f"Failed to open browser: {e}"
+    
 
 TOOLS = [
     get_current_time,
-    open_calculator
+    open_calculator,
+    open_browser
 ]
