@@ -5,210 +5,400 @@ import QtQuick.Window
 
 ApplicationWindow {
     id: window
+
     visible: true
-    width: 960
+    width: 1100
     height: 720
-    minimumWidth: 620
-    minimumHeight: 500
+    minimumWidth: 800
+    minimumHeight: 550
+
     title: "Ghost"
-    color: "#111315"
+
+    color: "#0d1117"
 
     ListModel {
-        id: messages
+        id: terminalOutput
+
         ListElement {
-            sender: "Ghost"
-            body: "What would you like to do?"
-            isUser: false
+            text: "Ghost v0.4"
+            isCommand: false
+            isError: false
+        }
+
+        ListElement {
+            text: "Model: qwen3:8b"
+            isCommand: false
+            isError: false
+        }
+
+        ListElement {
+            text: "Type a command or ask anything."
+            isCommand: false
+            isError: false
+        }
+
+        ListElement {
+            text: ""
+            isCommand: false
             isError: false
         }
     }
 
-    function submitMessage() {
-        var message = composer.text.trim()
-        if (!message || chat.busy)
+    function runSlashCommand(command) {
+
+    switch (command) {
+
+    case "/help":
+
+        terminalOutput.append({
+            "text": "Commands:\n/help\n/clear\n/status\n/exit",
+            "isCommand": false,
+            "isError": false
+        })
+
+        return true
+
+    case "/clear":
+
+        terminalOutput.clear()
+
+        terminalOutput.append({
+            "text": "Ghost v0.4",
+            "isCommand": false,
+            "isError": false
+        })
+
+        terminalOutput.append({
+            "text": "Terminal cleared.",
+            "isCommand": false,
+            "isError": false
+        })
+
+        return true
+
+    case "/status":
+
+        terminalOutput.append({
+            "text":
+                "Ghost Status\n\n" +
+                "Model: qwen3:8b\n" +
+                "Backend: Connected\n" +
+                "Conversation: Active",
+            "isCommand": false,
+            "isError": false
+        })
+
+        return true
+
+    case "/exit":
+
+        Qt.quit()
+
+        return true
+
+    default:
+
+        return false
+    }
+}
+
+    function submitCommand() {
+
+        var command = commandInput.text.trim()
+
+        if (runSlashCommand(command)) {
+
+            commandInput.clear()
+
+            terminal.positionViewAtEnd()
+
+            return
+        }
+
+        if (!command || chat.busy)
             return
 
-        messages.append({ "sender": "You", "body": message, "isUser": true, "isError": false })
-        composer.clear()
-        chat.send(message)
-        conversation.positionViewAtEnd()
+        terminalOutput.append({
+            "text": "> " + command,
+            "isCommand": true,
+            "isError": false
+        })
+
+        commandInput.clear()
+
+        chat.send(command)
+
+        terminal.positionViewAtEnd()
     }
 
     Connections {
+
         target: chat
 
         function onMessageReceived(message) {
-            messages.append({ "sender": "Ghost", "body": message, "isUser": false, "isError": false })
-            conversation.positionViewAtEnd()
+
+            terminalOutput.append({
+                "text": message,
+                "isCommand": false,
+                "isError": false
+            })
+
+            terminal.positionViewAtEnd()
         }
 
         function onRequestFailed(message) {
-            messages.append({ "sender": "Connection error", "body": message, "isUser": false, "isError": true })
-            conversation.positionViewAtEnd()
+
+            terminalOutput.append({
+                "text": message,
+                "isCommand": false,
+                "isError": true
+            })
+
+            terminal.positionViewAtEnd()
         }
     }
 
     ColumnLayout {
+
         anchors.fill: parent
         spacing: 0
 
         Rectangle {
+
             Layout.fillWidth: true
-            Layout.preferredHeight: 76
-            color: "#191d20"
+            Layout.preferredHeight: 48
+
+            color: "#161b22"
+
+            border.color: "#30363d"
+            border.width: 1
 
             RowLayout {
+
                 anchors.fill: parent
-                anchors.leftMargin: 28
-                anchors.rightMargin: 28
-                spacing: 14
+
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
+
+                Label {
+
+                    text: "GHOST"
+
+                    font.bold: true
+                    font.pixelSize: 18
+
+                    color: "#58a6ff"
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Label {
+
+                    text: "qwen3:8b"
+
+                    color: "#8b949e"
+
+                    font.family: "Consolas"
+                }
 
                 Rectangle {
-                    Layout.preferredWidth: 34
-                    Layout.preferredHeight: 34
-                    radius: 6
-                    color: "#20c997"
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: "G"
-                        color: "#10211d"
-                        font.bold: true
-                        font.pixelSize: 18
-                    }
+                    width: 8
+                    height: 8
+
+                    radius: 4
+
+                    color: chat.busy
+                           ? "#f1c40f"
+                           : "#3fb950"
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 1
+                Label {
 
-                    Label {
-                        text: "Ghost"
-                        color: "#f1f4f1"
-                        font.pixelSize: 18
-                        font.bold: true
-                    }
+                    text: chat.busy
+                          ? "Thinking..."
+                          : "Idle"
 
-                    Label {
-                        text: chat.busy ? "Working" : "Ready"
-                        color: chat.busy ? "#f3bf5b" : "#93d9c5"
-                        font.pixelSize: 12
-                    }
+                    color: "#8b949e"
+
+                    font.family: "Consolas"
                 }
             }
         }
 
         Rectangle {
+
             Layout.fillWidth: true
             Layout.fillHeight: true
-            color: "#111315"
+
+            color: "#0d1117"
 
             ListView {
-                id: conversation
+
+                id: terminal
+
                 anchors.fill: parent
-                anchors.margins: 28
+
+                anchors.margins: 18
+
+                spacing: 10
+
                 clip: true
-                model: messages
-                spacing: 14
+
+                model: terminalOutput
+
                 boundsBehavior: Flickable.StopAtBounds
 
-                delegate: Item {
-                    width: conversation.width
-                    height: bubble.implicitHeight
+                delegate: Text {
 
-                    Rectangle {
-                        id: bubble
-                        width: Math.min(implicitWidth, parent.width * 0.78)
-                        implicitWidth: messageText.implicitWidth + 32
-                        implicitHeight: messageColumn.implicitHeight + 24
-                        anchors.right: isUser ? parent.right : undefined
-                        radius: 6
-                        color: isError ? "#4d292b" : (isUser ? "#176a58" : "#22272a")
+                    width: terminal.width
 
-                        Column {
-                            id: messageColumn
-                            anchors.fill: parent
-                            anchors.margins: 16
-                            spacing: 5
+                    text: model.text
 
-                            Text {
-                                text: sender
-                                color: isError ? "#ffb4ac" : (isUser ? "#d7fff2" : "#a7b4ae")
-                                font.pixelSize: 12
-                                font.bold: true
-                            }
+                    wrapMode: Text.Wrap
 
-                            Text {
-                                id: messageText
-                                width: Math.min(implicitWidth, conversation.width * 0.78 - 32)
-                                text: body
-                                wrapMode: Text.Wrap
-                                color: "#f1f4f1"
-                                font.pixelSize: 15
-                                lineHeight: 1.3
-                            }
-                        }
+                    font.family: "Consolas"
+
+                    font.pixelSize: 15
+
+                    lineHeight: 1.4
+
+                    color: {
+                        if (model.isError)
+                            return "#ff7b72"
+
+                        if (model.isCommand)
+                            return "#58a6ff"
+
+                        return "#e6edf3"
                     }
                 }
             }
         }
 
-        Rectangle {
+                Rectangle {
+
             Layout.fillWidth: true
-            Layout.preferredHeight: 112
-            color: "#191d20"
+            Layout.preferredHeight: 60
+
+            color: "#161b22"
+
+            border.color: "#30363d"
+            border.width: 1
 
             RowLayout {
+
                 anchors.fill: parent
-                anchors.margins: 18
+
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
                 spacing: 12
 
+                Label {
+
+                    text: ">"
+
+                    color: "#58a6ff"
+
+                    font.family: "Consolas"
+                    font.pixelSize: 18
+                    font.bold: true
+                }
+
                 TextArea {
-                    id: composer
+
+                    id: commandInput
+
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
                     enabled: !chat.busy
-                    placeholderText: "Message Ghost"
-                    placeholderTextColor: "#77817c"
-                    color: "#f1f4f1"
+
+                    placeholderText: "Ask Ghost anything..."
+                    placeholderTextColor: "#6e7681"
+
+                    color: "#e6edf3"
+
+                    font.family: "Consolas"
                     font.pixelSize: 15
+
                     wrapMode: TextEdit.Wrap
+
                     selectByMouse: true
+
                     background: Rectangle {
-                        radius: 6
-                        color: "#111315"
-                        border.color: composer.activeFocus ? "#20c997" : "#3d4743"
-                        border.width: 1
+                        color: "transparent"
                     }
+
                     Keys.onReturnPressed: function(event) {
+
                         if (!(event.modifiers & Qt.ShiftModifier)) {
-                            submitMessage()
+                            submitCommand()
                             event.accepted = true
                         }
                     }
+
+                    Component.onCompleted: forceActiveFocus()
                 }
 
-                Button {
-                    Layout.alignment: Qt.AlignBottom
-                    Layout.preferredWidth: 90
-                    Layout.preferredHeight: 42
-                    text: chat.busy ? "Sending" : "Send"
-                    enabled: composer.text.trim().length > 0 && !chat.busy
-                    onClicked: submitMessage()
+                Label {
 
-                    contentItem: Text {
-                        text: parent.text
-                        color: parent.enabled ? "#10211d" : "#7b8580"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        font.bold: true
-                    }
-                    background: Rectangle {
-                        radius: 6
-                        color: parent.enabled ? "#20c997" : "#2c3431"
-                    }
+                    text: chat.busy
+                          ? "RUNNING"
+                          : "READY"
+
+                    color: chat.busy
+                           ? "#f1c40f"
+                           : "#3fb950"
+
+                    font.family: "Consolas"
+                    font.pixelSize: 13
+                    font.bold: true
                 }
             }
         }
-    }
+
+        Rectangle {
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: 30
+
+            color: "#0d1117"
+
+            RowLayout {
+
+                anchors.fill: parent
+
+                anchors.leftMargin: 18
+                anchors.rightMargin: 18
+
+                Label {
+                    text: "Enter Send"
+                    color: "#6e7681"
+                    font.family: "Consolas"
+                    font.pixelSize: 12
+                }
+
+                Label {
+                    text: "Shift+Enter New Line"
+                    color: "#6e7681"
+                    font.family: "Consolas"
+                    font.pixelSize: 12
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Label {
+                    text: "Mach 4 • AI Terminal"
+                    color: "#6e7681"
+                    font.family: "Consolas"
+                    font.pixelSize: 12
+                }
+            }
+        }
+            }
 }
