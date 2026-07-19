@@ -12,7 +12,6 @@ TOOL_BY_NAME = {
     for tool in TOOLS
 }
 
-
 class GhostAgent:
     def __init__(self):
         self.llm = ChatOllama(
